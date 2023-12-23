@@ -3,6 +3,7 @@ package day3
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
+import scala.util.matching.Regex.Match
 
 object Day3Part1 {
     val numberPattern = "[0-9]+".r
@@ -45,6 +46,68 @@ object Day3Part1 {
                     .map(_.matched.toInt)
                     .toList
                     .sum
+            )
+            .sum
+    }
+}
+
+object Day3Part2 {
+    val numberPattern = """(\d+)|[^.\d]""".r
+    def solve(input: String): Int = {
+        val lines = input.split("\n")
+        val grid = lines.map(_.toCharArray())
+        val numbers = lines.zipWithIndex
+            .map((value, idx) =>
+                (
+                  idx,
+                  numberPattern
+                      .findAllMatchIn(value)
+                      .map(m => (m.start, m.end, m.matched))
+                      .toList
+                )
+            )
+            .toMap
+
+        lines.zipWithIndex
+            .flatMap((line, idx) =>
+                """[^.\d]""".r
+                    .findAllMatchIn(line)
+                    .map(m => {
+                        val values = List(1, 0, -1)
+                        val offsets =
+                            values.flatMap(y => values.map(x => (y, x)))
+                        val adjacentNumbers = {
+                            offsets
+                                .map(offset =>
+                                    (m.start + offset(0), idx + offset(1))
+                                )
+                                .filter((y, x) => grid(x)(y).isDigit)
+                                .map((y, x) => {
+                                    val k = numbers
+                                        .get(x)
+                                        .flatMap(num =>
+                                            num.find(number =>
+                                                Range(number(0), number(1))
+                                                    .exists(rangeVal =>
+                                                        rangeVal == y
+                                                    )
+                                            )
+                                        )
+                                    k
+                                })
+                                .toSet
+                        }
+                        adjacentNumbers
+                    })
+                    .filter(
+                      _.size == 2
+                    )
+                    .map(item => {
+                        item.toList.flatMap(o => o.map(v => v(2).toInt))
+                    })
+                    .map((s) => {
+                        s.product
+                    })
             )
             .sum
     }
